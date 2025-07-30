@@ -1,8 +1,9 @@
 # Mean Flows: PyTorch + GPU Implementation
 
 <div align="center">
-<img width="800" alt="Image" src="https://github.com/user-attachments/assets/f90743f8-6505-465e-8740-68432583e689" />
+<img width="800" alt="Image" src="https://github.com/user-attachments/assets/2adc06a5-c3bf-41c8-acfa-54c822e7c07b" />
 </div>
+
 
 This is a PyTorch+GPU re-implementation for the CIFAR-10 experiments in [Mean Flows for One-step Generative Modeling](https://arxiv.org/abs/2505.13447). The original experiments were done in JAX+TPU.
 
@@ -20,8 +21,9 @@ conda activate meanflow
 Run `demo.ipynb` for a demo of 1-step generation and FID evaluation. This demo should produce <2.9 FID.
 
 <div align="center">
-<img width="480" alt="Image" src="https://github.com/user-attachments/assets/63ef7777-2693-4166-abc4-c8031bd5cb4c" />
+<img width="480" alt="Image" src="https://github.com/user-attachments/assets/11966c45-25c6-44e5-ae24-75b29e697b9b" />
 </div>
+
 
 ## Training
 

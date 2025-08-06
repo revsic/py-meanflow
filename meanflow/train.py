@@ -89,7 +89,7 @@ def get_data_loader(args, is_for_fid):
     return data_loader
 
 
-def main(args):
+def main(args):#\
     distributed_mode.init_distributed_mode(args)
 
     print(f"Rank: {distributed_mode.get_rank()}")

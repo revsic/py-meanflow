@@ -1,4 +1,5 @@
-torchrun --standalone --nproc_per_node=8 --master_port=12345 \
+export CUDA_VISIBLE_DEVICES=2,3
+torchrun --standalone --nproc_per_node=2 --master_port=12345 \
     train.py \
     --output_dir=./tmp \
     --dataset=cifar10 \

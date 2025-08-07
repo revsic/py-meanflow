@@ -153,6 +153,6 @@ def train_one_epoch(
                 log_writer.add_scalar(f"common/lr", lr, steps)
                 log_writer.add_scalar(f"common/epoch", steps / len(data_loader), steps)
                 log_writer.add_scalar(f"common/sec-per-iter", sec_per_iter, steps)
-                log_writer.add_scalar(f"loss", loss_ave)
-                log_writer.add_scalar(f"debug-pupose:meanflow/adp_wt", adp_wt_ave)
+                log_writer.add_scalar(f"loss", loss_ave, steps)
+                log_writer.add_scalar(f"debug-pupose:meanflow/adp_wt", adp_wt_ave, steps)
     return

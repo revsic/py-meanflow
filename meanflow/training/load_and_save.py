@@ -17,20 +17,19 @@ def save_on_master(*args, **kwargs):
 
 
 def save_model(
-    args, epoch, model_without_ddp, optimizer, lr_schedule,
+    args, epoch, steps, model_without_ddp, optimizer, lr_schedule,
 ):
     output_dir = Path(args.output_dir)
-    epoch_name = str(epoch)
-
     checkpoint_paths = [output_dir / "checkpoint-last.pth",]
-    if (epoch + 1) % 1000 == 0:  # hack to save disk
-        checkpoint_paths.append(output_dir / ("checkpoint-%s.pth" % epoch_name))
+    if epoch % 1000 == 0:  # hack to save disk
+        checkpoint_paths.append(output_dir / f"checkpoint-{steps}.pth")
     for checkpoint_path in checkpoint_paths:
         to_save = {
             "model": model_without_ddp.state_dict(),
             "optimizer": optimizer.state_dict(),
             "lr_schedule": lr_schedule.state_dict(),
             "epoch": epoch,
+            "steps": steps,
             "args": args,
         }
 

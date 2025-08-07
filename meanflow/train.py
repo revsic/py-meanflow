@@ -183,10 +183,12 @@ def main(args):#\
 
     batch_loss = MeanMetric().to(device, non_blocking=True)
     batch_time = MeanMetric().to(device, non_blocking=True)
+    batch_adp_wt = MeanMetric().to(device, non_blocking=True)
     batch_loss.reset()
     batch_time.reset()
+    batch_adp_wt.reset()
 
-    meters = {'batch_loss': batch_loss, 'batch_time': batch_time,}
+    meters = {'batch_loss': batch_loss, 'batch_time': batch_time, "batch_adp_wt": batch_adp_wt}
 
     logger.info(f"Start from {args.start_epoch} to {args.epochs} epochs")
     start_time = time.time()
@@ -208,10 +210,11 @@ def main(args):#\
             )
 
         if args.output_dir and (
-            (args.eval_frequency > 0 and (epoch + 1) % args.eval_frequency == 0)
+            (args.eval_frequency > 0 and epoch % args.eval_frequency == 0)
             or args.eval_only
             or args.test_run
         ):
+            steps = (epoch + 1) * len(data_loader_train)
             if not args.eval_only:
                 save_model(
                     args=args,
@@ -219,32 +222,33 @@ def main(args):#\
                     optimizer=optimizer,
                     lr_schedule=lr_schedule,
                     epoch=epoch,
+                    steps=steps,
                 )
                 logging.info(f"Saved checkpoint to {args.output_dir}")
 
             # Eval ema model:
             net_eval = model_without_ddp.net_ema
             ema_decay = net_eval.ema_decay
-            eval_stats = eval_model(model, net_eval, data_loader_fid, device, epoch=epoch, args=args, suffix=f'_ema{ema_decay}')
+            eval_stats = eval_model(model, net_eval, data_loader_fid, device, epoch=epoch, steps=steps, args=args, suffix=f'_ema{ema_decay}', log_writer=log_writer)
             if log_writer is not None and "fid" in eval_stats:
                 logging.info(f"Eval {epoch + 1} epochs finished: FID_ema{ema_decay}: {eval_stats['fid']}")
-                log_writer.add_scalar(f"FID_ema{ema_decay}", eval_stats["fid"], epoch + 1)
+                log_writer.add_scalar(f"metric/fid50k:EMA{ema_decay}", eval_stats["fid"], steps)
 
             # Eval extra ema model:
             for i in range(len(model_without_ddp.ema_decays)):
                 net_eval = model_without_ddp._modules[f"net_ema{i + 1}"]
                 ema_decay = net_eval.ema_decay
-                eval_stats = eval_model(model, net_eval, data_loader_fid, device, epoch=epoch, args=args, suffix=f'_ema{ema_decay}')
+                eval_stats = eval_model(model, net_eval, data_loader_fid, device, epoch=epoch, steps=steps, args=args, suffix=f'_ema{ema_decay}', log_writer=log_writer)
                 if log_writer is not None and "fid" in eval_stats:
                     logging.info(f"Eval {epoch + 1} epochs finished: FID_ema{ema_decay}: {eval_stats['fid']}")
-                    log_writer.add_scalar(f"FID_ema{ema_decay}", eval_stats["fid"], epoch + 1)
+                    log_writer.add_scalar(f"metric/fid50k:EMA{ema_decay}", eval_stats["fid"], steps)
 
             # Eval no-ema model:
             net_eval = model_without_ddp.net
-            eval_stats = eval_model(model, net_eval, data_loader_fid, device, epoch=epoch, args=args, suffix='_noema')
+            eval_stats = eval_model(model, net_eval, data_loader_fid, device, epoch=epoch, steps=steps, args=args, suffix='_noema', log_writer=log_writer)
             if log_writer is not None and "fid" in eval_stats:
                 logging.info(f"Eval {epoch + 1} epochs finished: FID w/o ema: {eval_stats['fid']}")
-                log_writer.add_scalar("FID", eval_stats["fid"], epoch + 1)
+                log_writer.add_scalar("metric/fid50k", eval_stats["fid"], steps)
 
         if args.test_run or args.eval_only:
             break

@@ -15,6 +15,7 @@ import PIL.Image
 
 import torch
 from torch.nn.parallel import DistributedDataParallel
+from torch.utils.tensorboard import SummaryWriter
 from torchmetrics.image.fid import FrechetInceptionDistance
 from torchvision.utils import save_image
 from training import distributed_mode
@@ -31,8 +32,10 @@ def eval_model(
     data_loader: Iterable,
     device: torch.device,
     epoch: int,
+    steps: int,
     args: Namespace,
     suffix: str = "",
+    log_writer: SummaryWriter | None = None,
 ):
     gc.collect()
     model.train(False)
@@ -83,9 +86,14 @@ def eval_model(
                     synthetic_samples,
                     fp=Path(args.output_dir)
                     / "snapshots"
-                    / f"{epoch}_{data_iter_step}{suffix}.png",
+                    / f"{steps}_{data_iter_step}{suffix}.png",
                 )
                 snapshots_saved = True
+
+            if log_writer is not None:
+                for i, img in enumerate(synthetic_samples[:10]):
+                    log_writer.add_image(f"samples/{i}", img, steps)
+                log_writer = None
 
             if args.save_fid_samples and args.output_dir:
                 images_np = (

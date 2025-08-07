@@ -64,8 +64,9 @@ class MeanFlow(nn.Module):
             loss = loss / adp_wt
 
             loss = loss.mean()  # mean over batch dimension
-        
-        return loss
+            adp_wt = adp_wt.mean()
+
+        return loss, adp_wt
     
     def sample(self, samples_shape, net=None, device=None):
         net = net if net is not None else self.net_ema                

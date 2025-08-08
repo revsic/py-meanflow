@@ -2,7 +2,7 @@ import torch
 
 import torch.nn as nn
 
-from models.time_sampler import sample_two_timesteps
+from models.time_sampler import sample_two_timesteps, logit_normal_timestep_sample
 from models.ema import init_ema, update_ema_net
 
 
@@ -37,7 +37,11 @@ class MeanFlow(nn.Module):
 
         device = x.device
         e = torch.randn_like(x).to(device)
-        t, r = sample_two_timesteps(self.args, num_samples=x.shape[0], device=device)
+        # step 1: sample two independent timesteps
+        t = logit_normal_timestep_sample(self.args.P_mean_t, self.args.P_std_t, x.shape[0], device=device)
+        r = logit_normal_timestep_sample(self.args.P_mean_r, self.args.P_std_r, x.shape[0], device=device)
+        # step 2: ensure t >= r
+        t, r = torch.maximum(t, r), torch.minimum(t, r)
         t, r = t.view(-1, 1, 1, 1), r.view(-1, 1, 1, 1)
 
         z = (1 - t) * x + t * e
@@ -52,13 +56,13 @@ class MeanFlow(nn.Module):
         drdt = torch.zeros_like(r)
 
         with torch.amp.autocast("cuda", enabled=False):
-            u_pred, dudt = torch.func.jvp(u_func, (z, t, r), (v, dtdt, drdt))
-        
-            u_tgt = (v - (t - r) * dudt).detach()
+            v_t = u_func(z, t, t)
+            u_pred, dudt = torch.func.jvp(u_func, (z, t, r), (v_t, dtdt, drdt))
+            u_tgt = (v_t - (t - r) * dudt).detach()
 
             loss = (u_pred - u_tgt)**2
             loss = loss.sum(dim=(1, 2, 3))  # squared l2 loss
-            
+            loss = loss + (v_t - v).square().sum(dim=(1, 2, 3))
             # adaptive weighting
             adp_wt = (loss.detach() + self.args.norm_eps) ** self.args.norm_p
             loss = loss / adp_wt

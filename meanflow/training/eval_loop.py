@@ -9,7 +9,7 @@ import math
 import os
 from argparse import Namespace
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable,Optional
 
 import PIL.Image
 
@@ -35,7 +35,7 @@ def eval_model(
     steps: int,
     args: Namespace,
     suffix: str = "",
-    log_writer: SummaryWriter | None = None,
+    log_writer: Optional[SummaryWriter] = None
 ):
     gc.collect()
     model.train(False)

@@ -53,20 +53,27 @@ class MeanFlow(nn.Module):
             return self.net(z, (t.view(-1), h.view(-1)), aug_cond)
         
         # taylor approximation 
-        def dudt_func(z, t, r):
-            eps = 1e-5
-            z_e=(1 - (t+eps)) * x + (t+eps) * e
-            return (u_func(z_e, t+eps, r)-u_func(z, t, r))/eps
+        def dudt_func(z, t, r, v_t):
+            eps = 0.005
+            # z_e=(1 - (t+eps)) * x + (t+eps) * e
+            z_e = z + v_t * eps
+            z_e_minus = z - v_t * eps
+            return (u_func(z_e, t+eps, r)-u_func(z_e_minus, t-eps, r))/(2* eps)
+
+
+        # x + v * t 느낌?
+
 
         dtdt = torch.ones_like(t)
         drdt = torch.zeros_like(r)
 
         with torch.amp.autocast("cuda", enabled=False):
             v_t = u_func(z, t, t)
-            #u_pred, dudt = torch.func.jvp(u_func, (z, t, r), (v_t, dtdt, drdt))
+            # u_pred, dudt = torch.func.jvp(u_func, (z, t, r), (v_t, dtdt, drdt))
             u_pred = u_func(z, t, r)
-            dudt = dudt_func(z, t, r)
+            dudt = dudt_func(z, t, r, v_t)
 
+        
             u_tgt = (v_t - (t - r) * dudt).detach()
 
             loss = (u_pred - u_tgt)**2

@@ -1,6 +1,6 @@
 CUDA_VISIBLE_DEVICES=2,3 torchrun --standalone --nproc_per_node=2 --master_port=12347 \
     train.py \
-    --output_dir=./logs/2025.08.07KST17:50-ab37 \
+    --output_dir=./logs/2025.08.08KST13:00-ab37A \
     --dataset=cifar10 \
     --batch_size=128 \
     --lr=0.0006 \
